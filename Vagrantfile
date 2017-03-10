@@ -4,6 +4,11 @@ apt-get update
 apt-get install -y openvswitch-switch
 SCRIPT
 
+$install_kvm = <<SCRIPT
+apt-get update
+apt-get install -y qemu-kvm libvirt-bin bridge-utils virtinst
+SCRIPT
+
 SERVER1_SUBNET_1_IP      = "192.168.1.10"
 SERVER1_MGMT_IP           = "192.168.101.10"
 
@@ -19,7 +24,7 @@ Vagrant.configure(2) do |config|
    config.vm.synced_folder '.', '/vagrant', disabled: true
    
    config.vm.provider :libvirt do |domain|
-      domain.memory = 2048
+      domain.memory = 8192 
       domain.cpus = 2
       domain.nested = true
       domain.volume_cache = 'none'
@@ -66,6 +71,8 @@ Vagrant.configure(2) do |config|
        server.vm.provision "shell", inline: "ifconfig eth1 #{SERVER1_SUBNET_1_IP} netmask 255.255.255.0"
 
        server.vm.provision "shell", inline: $install_ovs 
+       server.vm.provision "shell", inline: $install_kvm 
+       server.vm.provision "shell", inline: "route add #{SERVER2_SUBNET_2_IP}/32 gw #{ROUTER_SUBNET_1_GATEWAY} dev eth1"
    end
   #SERVER-2
     config.vm.define "server2" do |server|
@@ -82,6 +89,8 @@ Vagrant.configure(2) do |config|
        server.vm.provision "shell", inline: "ifconfig eth1 #{SERVER2_SUBNET_2_IP} netmask 255.255.255.0"
 
        server.vm.provision "shell", inline: $install_ovs 
+       server.vm.provision "shell", inline: $install_kvm 
+       server.vm.provision "shell", inline: "route add #{SERVER1_SUBNET_1_IP}/32 gw #{ROUTER_SUBNET_2_GATEWAY} dev eth1" 
    end
 
 
